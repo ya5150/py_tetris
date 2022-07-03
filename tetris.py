@@ -1,10 +1,11 @@
 from msvcrt import kbhit
-from re import I
+#from re import I
 import sys
 import pygame
 import time
-# -*- coding:utf-8 -*-
 from pygame.locals import *
+import copy
+import random
 #class Tetris_field
 
 def move_check(mino,well,after_fall_minos):#ミノと壁が衝突するか判定,引数に複数クラスの要素を要求するためクラス外に
@@ -17,16 +18,63 @@ def move_check(mino,well,after_fall_minos):#ミノと壁が衝突するか判定
             flag = True
     #print(flag)
     return(flag)
+def create_control_minotes(next_control_mino):
+    i=0
+    i=Tetriminol_sq()
+    next_control_mino=copy.copy(i)
+    return(next_control_mino)
 
-def spin_check(mino,well,after_fall_mino,):
-    print(f"{mino}\n\n{well}\n\n{after_fall_mino}\m")
+def create_control_mino(next_control_mino):
+    randam_nam=random.uniform(0,7)
+    i=0
+    if randam_nam <1:
+        i=Tetriminol_I()
+        next_control_mino=copy.copy(i)
+        return(next_control_mino)
+    elif randam_nam <2:
+        i=Tetriminol_T()
+        next_control_mino=copy.copy(i)
+        return(next_control_mino)
+    elif randam_nam<3:
+        i=Tetriminol_S()
+        next_control_mino=copy.copy(i)
+        return(next_control_mino)
+    elif randam_nam <4:
+        i=Tetriminol_S_R()
+        next_control_mino=copy.copy(i)
+        return(next_control_mino)
+    elif randam_nam<5:
+        i=Tetriminol_L()
+        next_control_mino=copy.copy(i)
+        return(next_control_mino)
+    elif randam_nam <6:
+        i=Tetriminol_L_R()
+        next_control_mino=copy.copy(i)
+        return(next_control_mino)
+    elif randam_nam<7:
+        i=Tetriminol_sq()
+        next_control_mino=copy.copy(i)
+        return(next_control_mino)
+class Hold:
+    def __init__(self):
+        self.hold_rect=0
+        #self.hold_rect_r
+        #self.hold_rect_g
+        #self.hold_rect_b
+
+    def swap(self,hold_rect):
+        self.hold_rect=copy.copy(hold_rect)
 
 class Tetriminol:#操作ミノに関するクラス
     def __init__(self):
         self.rect_start_x=300
         self.rect_start_y=100
-        self.rect_h=15
-        self.rect_w=13
+        self.rect_size_x=20
+        self.rect_size_y=21
+        self.rect_move_x=20
+        self.rect_move_y=20
+        self.rect_next_x=700
+        self.rect_next_y=100
         self.screen = pygame.display.set_mode((1200,800))
         self.spin_pattern=0
         self.spin_direction=0#回転方向の命令 -1は左回転、0は回転しない,１は右回転
@@ -43,6 +91,9 @@ class Tetriminol:#操作ミノに関するクラス
         self.key_down_a=False
         self.key_down_up=False
         self.key_sensitivity=0
+        self.r_move_count=0
+        self.l_move_count=0
+        self.key_sensitivity=2
     def mino_fall(self,well,after_fall_minos):
         fall=False
         if move_check(self.mino,well,after_fall_minos) == False:
@@ -63,50 +114,58 @@ class Tetriminol:#操作ミノに関するクラス
 
     def move(self,well,after_fall_mino):
             """キー入力の監視"""
+            key=[]
+
             for event in  pygame.event.get():
-                """event=キー入力などユーザーの操作"""
+                """event=キー入力などユーザーの操作,elif使うと同時押しに対応できないので使わない"""
                 if event.type == pygame.QUIT:#終了
                     sys.exit()
-                elif event.type == pygame.KEYDOWN:
+                if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RIGHT:#右移動
                         self.key_down_r=True
-                    elif event.key == pygame.K_LEFT:#左移動
+                    if event.key == pygame.K_LEFT:#左移動
                         self.key_down_l=True
-                    elif event.key == pygame.K_d:#左回転
+                    if event.key == pygame.K_d:#左回転
                         self.key_down_d=True
-                    elif event.key == pygame.K_a:#右回転
-                        self.key_down_a == True
-                    elif event.key == pygame.K_UP:#ハードドロップ
+                    if event.key == pygame.K_a:#右回転
+                        self.key_down_a = True
+                    if event.key == pygame.K_UP:#ハードドロップ
                         self.key_down_up=True
-                elif event.type == pygame.KEYUP:
+                if event.type == pygame.KEYUP:
                     if event.key == pygame.K_RIGHT:
                         self.key_down_r= False
-                    elif event.key == pygame.K_LEFT:
+                    if event.key == pygame.K_LEFT:
                         self.key_down_l= False
-                    elif event.key == pygame.K_d:
+                    if event.key == pygame.K_d:
                         self.key_down_d = False
-                    elif event.key == pygame.K_a:
+                    if event.key == pygame.K_a:
                         self.key_down_a = False
-                    elif event.key == pygame.K_UP:
+                    if event.key == pygame.K_UP:
                         self.key_down_up = False
             """キー入力に対応した操作ミノの動作"""
-            #if self.key_sensitivity%2 == 0:
-            if self.key_down_r == True:
-                self.app_x=self.app_x+20
-                self.spin(well,after_fall_mino,r_move=True)
-            elif self.key_down_l == True:
-                self.app_x=self.app_x-20
-                self.spin(well,after_fall_mino,l_move=True)
-            elif self.key_down_d == True:
-                self.spin(well,after_fall_mino,+1)#＋1は右回転
-            elif self.key_down_a == True:
-                self.spin(well,after_fall_mino,-1)#-1は左回転
-            elif self.key_down_up == True:
+            self.key_sensitivity=self.key_sensitivity+1
+            if self.key_sensitivity%2 == 0:
+                if self.key_down_r == True:
+                    self.app_x=self.app_x+20
+                    self.drow(well,after_fall_mino,r_move=True)
+                    if self.r_move_count > 9:#連続入力対策
+                        self.r_move_count=0
+                        self.key_down_r=False
+                if self.key_down_l == True:
+                    self.app_x=self.app_x-20
+                    self.drow(well,after_fall_mino,l_move=True)
+                    if self.l_move_count > 9:#連続入力対策
+                        self.l_move_count=0
+                        self.key_down_l=False
+                if self.key_down_d == True:
+                    self.drow(well,after_fall_mino,-1)#＋1は右回転
+                    #self.key_down_d == False#連続入力対策
+                if self.key_down_a == True:
+                    self.drow(well,after_fall_mino,+1)#-1は左回転
+                    #self.key_down_a == False
+                if self.key_down_up == True:
                     self.hard_dorp=True
-            pygame.event.clear()
-            #self.key_sensitivity=self.key_sensitivity+1
             return(self.hard_dorp)
-
 
     def move_check(self,mino,well):#ミノと壁が衝突するか判定
         flag = False #衝突判定用フラグ
@@ -121,10 +180,10 @@ class Field_T(Tetriminol):#壁や落下後のテトリミノに関する処理
         super().__init__()
         self.after_fall_mino=[]#落下後のミノを格納する
     def drow(self):#壁を描画
-        self.well.append(pygame.draw.rect(self.screen,(50,50,50),Rect(0,0,200,800)))#上の壁
+        self.well.append(pygame.draw.rect(self.screen,(50,50,50),Rect(0,0,200,800)))#壁
         self.well.append(pygame.draw.rect(self.screen,(50,50,50),Rect(400,0,200,800)))#左の壁
         self.well.append(pygame.draw.rect(self.screen,(50,50,50),Rect(0,499,400,300)))#下の壁
-        self.well.append(pygame.draw.rect(self.screen,(50,50,50),Rect(0,0,400,99)))#右の壁
+        self.well.append(pygame.draw.rect(self.screen,(50,50,50),Rect(0,0,400,80)))#上の壁
         return(self.well)#衝突判定に使用するため戻り値にする
 
     def drow_fall_mino(self):#落下済みミノ描写
@@ -174,44 +233,329 @@ class Field_T(Tetriminol):#壁や落下後のテトリミノに関する処理
 class Tetriminol_I(Tetriminol):#I型テトリミノ
     def __init__(self):
         super().__init__()
-        self.rect_i_r=50
-        self.rect_i_g=50
-        self.rect_i_b=200
-        self.spin_i=1
+        self.rect_r=100
+        self.rect_g=100
+        self.rect_b=200
 
-    def spin(self,well=[],after_fall_mino=[],spin_order=0,r_move=False,l_move=False):#I型テトリミノの描画
+    def drow(self,well=[],after_fall_mino=[],spin_order=0,r_move=False,l_move=False):#I型テトリミノの描画
         self.mino=[]
         self.spin_pattern=self.spin_pattern+spin_order#spin_order+1で右回転,-1で左回転
-
-        if self.spin_pattern >=2:
+        spin_max=1
+        spin_min=0
+        if self.spin_pattern > spin_max:
             self.spin_pattern=0
-        if self.spin_pattern <=-1:
+        if self.spin_pattern < spin_min:
             self.spin_pattern=1
 
-        if self.spin_pattern == 0:#I型テトリミノが縦方向の時のミノの配置
-            self.mino.append(pygame.draw.rect(self.screen,(100,100,200),Rect(self.rect_start_x+self.app_x, self.rect_start_y+self.app_y,20,21)))
-            self.mino.append(pygame.draw.rect(self.screen,(100,100,200),Rect(self.rect_start_x+self.app_x, self.rect_start_y+self.app_y+20,20,21)))
-            self.mino.append(pygame.draw.rect(self.screen,(100,100,200),Rect(self.rect_start_x+self.app_x, self.rect_start_y+self.app_y+40,20,21)))
-            self.mino.append(pygame.draw.rect(self.screen,(100,100,200),Rect(self.rect_start_x+self.app_x, self.rect_start_y+self.app_y+60,20,21)))
+        if self.spin_pattern == 0:#
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*2,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*3,self.rect_size_x,self.rect_size_y)))
 
         else:#I型テトリミノが横方向の時のミノの配置
-            self.mino.append(pygame.draw.rect(self.screen,(100,100,200),Rect(self.rect_start_x+self.app_x, self.rect_start_y+self.app_y,20,21)))
-            self.mino.append(pygame.draw.rect(self.screen,(100,100,200),Rect(self.rect_start_x+self.app_x+20, self.rect_start_y+self.app_y,20,21)))
-            self.mino.append(pygame.draw.rect(self.screen,(100,100,200),Rect(self.rect_start_x+self.app_x+40, self.rect_start_y+self.app_y,20,21)))
-            self.mino.append(pygame.draw.rect(self.screen,(100,100,200),Rect(self.rect_start_x+self.app_x+60, self.rect_start_y+self.app_y,20,21)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*2, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*3, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
 
         if move_check(self.mino,well,after_fall_mino)==True:#ブロックが接触していた場合
             if  spin_order!=0:#回転指示が出ていれば回転前に
                 self.spin_pattern=self.spin_pattern-spin_order
-                if self.spin_pattern <=-1:
+                if self.spin_pattern < spin_min:
                     self.spin_pattern=1
-                if self.spin_pattern >=2:
+                if self.spin_pattern > spin_max:
                     self.spin_pattern=0
-            if r_move==True:#右移動指示が出ていれば
-                self.app_x=self.app_x-20
+            if r_move==True:#右移動指示が出てれば戻す
+                self.app_x=self.app_x-self.rect_move_x
             if l_move==True:
-                self.app_x=self.app_x+20
+                self.app_x=self.app_x+self.rect_move_x
         return()
+    def next_drow(self):
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*2,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*3,self.rect_size_x,self.rect_size_y))
+
+class Tetriminol_T(Tetriminol):#T型テトリミノ
+    def __init__(self):
+        super().__init__()
+        self.rect_r=150
+        self.rect_g=200
+        self.rect_b=150
+
+    def drow(self,well=[],after_fall_mino=[],spin_order=0,r_move=False,l_move=False):#I型テトリミノの描画
+        self.mino=[]
+        self.spin_pattern=self.spin_pattern+spin_order#spin_order+1で右回転,-1で左回転
+        spin_max=3
+        spin_min=0
+        if self.spin_pattern > spin_max:
+            self.spin_pattern=spin_min
+        if self.spin_pattern < spin_min:
+            self.spin_pattern=spin_max
+        if self.spin_pattern == 0:
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x, self.rect_start_y+self.app_y+self.rect_move_y,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+        elif self.spin_pattern == 1:
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*2,self.rect_size_x,self.rect_size_y)))
+        elif self.spin_pattern == 2:
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+        elif self.spin_pattern == 3:
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*2,self.rect_size_x,self.rect_size_y)))
+
+        if move_check(self.mino,well,after_fall_mino)==True:#ブロックが接触していた場合
+            if  spin_order!=0:#回転指示が出ていれば回転前に
+                self.spin_pattern=self.spin_pattern-spin_order
+                if self.spin_pattern < spin_min:
+                    self.spin_pattern=spin_max
+                if self.spin_pattern > spin_max:
+                    self.spin_pattern=spin_min
+            if r_move==True:#右移動指示が出てれば戻す
+                self.app_x=self.app_x-self.rect_move_x
+            if l_move==True:
+                self.app_x=self.app_x+self.rect_move_x
+        return()
+    def next_drow(self):
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x-self.rect_move_x*1, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*1, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+
+class Tetriminol_S(Tetriminol):#S型テトリミノ
+    def __init__(self):
+        super().__init__()
+        self.rect_r=150
+        self.rect_g=200
+        self.rect_b=150
+
+    def drow(self,well=[],after_fall_mino=[],spin_order=0,r_move=False,l_move=False):#I型テトリミノの描画
+        self.mino=[]
+        self.spin_pattern=self.spin_pattern+spin_order#spin_order+1で右回転,-1で左回転
+        spin_max=1
+        spin_min=0
+        if self.spin_pattern > spin_max:
+            self.spin_pattern=spin_min
+        if self.spin_pattern < spin_min:
+            self.spin_pattern=spin_max
+        if self.spin_pattern == 0:
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+        else:
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y-self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+
+        if move_check(self.mino,well,after_fall_mino)==True:#ブロックが接触していた場合
+            if  spin_order!=0:#回転指示が出ていれば回転前に
+                self.spin_pattern=self.spin_pattern-spin_order
+                if self.spin_pattern < spin_min:
+                    self.spin_pattern=spin_max
+                if self.spin_pattern > spin_max:
+                    self.spin_pattern=spin_min
+            if r_move==True:#右移動指示が出てれば戻す
+                self.app_x=self.app_x-self.rect_move_x
+            if l_move==True:
+                self.app_x=self.app_x+self.rect_move_x
+        return()
+    def next_drow(self):
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*1, self.rect_next_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x-self.rect_move_x*1, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+
+class Tetriminol_S_R(Tetriminol):#逆S型テトリミノ
+    def __init__(self):
+        super().__init__()
+        self.rect_r=150
+        self.rect_g=200
+        self.rect_b=150
+
+    def drow(self,well=[],after_fall_mino=[],spin_order=0,r_move=False,l_move=False):#I型テトリミノの描画
+        self.mino=[]
+        self.spin_pattern=self.spin_pattern+spin_order#spin_order+1で右回転,-1で左回転
+        spin_max=1
+        spin_min=0
+        if self.spin_pattern > spin_max:
+            self.spin_pattern=spin_min
+        if self.spin_pattern < spin_min:
+            self.spin_pattern=spin_max
+        if self.spin_pattern == 0:
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+        else:
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*2,self.rect_size_x,self.rect_size_y)))
+
+        if move_check(self.mino,well,after_fall_mino)==True:#ブロックが接触していた場合
+            if  spin_order!=0:#回転指示が出ていれば回転前に
+                self.spin_pattern=self.spin_pattern-spin_order
+                if self.spin_pattern < spin_min:
+                    self.spin_pattern=spin_max
+                if self.spin_pattern > spin_max:
+                    self.spin_pattern=spin_min
+            if r_move==True:#右移動指示が出てれば戻す
+                self.app_x=self.app_x-self.rect_move_x
+            if l_move==True:
+                self.app_x=self.app_x+self.rect_move_x
+        return()
+    def next_drow(self):
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*1, self.rect_next_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*1, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*2, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+
+class Tetriminol_sq(Tetriminol):#四角型テトリミノ
+    def __init__(self):
+        super().__init__()
+        self.rect_r=150
+        self.rect_g=150
+        self.rect_b=150
+
+    def drow(self,well=[],after_fall_mino=[],spin_order=0,r_move=False,l_move=False):#I型テトリミノの描画
+        self.mino=[]
+        self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+        self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+        self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+        self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+        if move_check(self.mino,well,after_fall_mino)==True:#ブロックが接触していた場合
+            if r_move==True:#右移動指示が出てれば戻す
+                self.app_x=self.app_x-self.rect_move_x
+            if l_move==True:
+                self.app_x=self.app_x+self.rect_move_x
+        return()
+    def next_drow(self):
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*1, self.rect_next_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*1, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+
+class Tetriminol_L(Tetriminol):#L型テトリミノ
+    def __init__(self):
+        super().__init__()
+        self.rect_r=150
+        self.rect_g=200
+        self.rect_b=150
+
+    def drow(self,well=[],after_fall_mino=[],spin_order=0,r_move=False,l_move=False):#I型テトリミノの描画
+        self.mino=[]
+        self.spin_pattern=self.spin_pattern+spin_order#spin_order+1で右回転,-1で左回転
+        spin_max=3
+        spin_min=0
+        if self.spin_pattern > spin_max:
+            self.spin_pattern=spin_min
+        if self.spin_pattern < spin_min:
+            self.spin_pattern=spin_max
+        if self.spin_pattern == 0:
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*0, self.rect_start_y+self.app_y-self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+        elif self.spin_pattern == 1:
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*1, self.rect_start_y+self.app_y-self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+        elif self.spin_pattern == 2:
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*1, self.rect_start_y+self.app_y-self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*0, self.rect_start_y+self.app_y-self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+        elif self.spin_pattern == 3:
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+
+        if move_check(self.mino,well,after_fall_mino)==True:#ブロックが接触していた場合
+            if  spin_order!=0:#回転指示が出ていれば回転前に
+                self.spin_pattern=self.spin_pattern-spin_order
+                if self.spin_pattern < spin_min:
+                    self.spin_pattern=spin_max
+                if self.spin_pattern > spin_max:
+                    self.spin_pattern=spin_min
+            if r_move==True:#右移動指示が出てれば戻す
+                self.app_x=self.app_x-self.rect_move_x
+            if l_move==True:
+                self.app_x=self.app_x+self.rect_move_x
+        return()
+    def next_drow(self):
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x-self.rect_move_x*0, self.rect_next_y-self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*1, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+
+class Tetriminol_L_R(Tetriminol):#逆L型テトリミノ
+    def __init__(self):
+        super().__init__()
+        self.rect_r=150
+        self.rect_g=200
+        self.rect_b=150
+
+    def drow(self,well=[],after_fall_mino=[],spin_order=0,r_move=False,l_move=False):
+        self.mino=[]
+        self.spin_pattern=self.spin_pattern+spin_order#spin_order+1で右回転,-1で左回転
+        spin_max=3
+        spin_min=0
+        if self.spin_pattern > spin_max:
+            self.spin_pattern=spin_min
+        if self.spin_pattern < spin_min:
+            self.spin_pattern=spin_max
+        if self.spin_pattern == 0:
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*0, self.rect_start_y+self.app_y-self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+        elif self.spin_pattern == 1:
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*1, self.rect_start_y+self.app_y-self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+        elif self.spin_pattern == 2:
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y-self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*1, self.rect_start_y+self.app_y-self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+        elif self.spin_pattern == 3:
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*0, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x+self.rect_move_x*1, self.rect_start_y+self.app_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y)))
+            self.mino.append(pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_start_x+self.app_x-self.rect_move_x*1, self.rect_start_y+self.app_y-self.rect_move_y*1,self.rect_size_x,self.rect_size_y)))
+
+        if move_check(self.mino,well,after_fall_mino)==True:#ブロックが接触していた場合
+            if  spin_order!=0:#回転指示が出ていれば回転前に
+                self.spin_pattern=self.spin_pattern-spin_order
+                if self.spin_pattern < spin_min:
+                    self.spin_pattern=spin_max
+                if self.spin_pattern > spin_max:
+                    self.spin_pattern=spin_min
+            if r_move==True:#右移動指示が出てれば戻す
+                self.app_x=self.app_x-self.rect_move_x
+            if l_move==True:
+                self.app_x=self.app_x+self.rect_move_x
+        return()
+    def next_drow(self):
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y-self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x-self.rect_move_x*0, self.rect_next_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x-self.rect_move_x*1, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
 
 
 class AlienInvasion:
@@ -219,45 +563,45 @@ class AlienInvasion:
         """ゲームを初期化してゲームのリソースを作成する"""
         pygame.init()
         self.screen = pygame.display.set_mode((1200,800))
-        pygame.display.set_caption("エイリアン襲撃")
+        pygame.display.set_caption("Tetris")
         self.bg_color = (230,230,100)
 
     def run_game(self):
         """ゲームのメインループを開始する"""
-        x=0
-        t=0
-        y=0
-        spin=0
         fall_flag=True#操作しているミノが落下済みまたはループ初回時かどうか
         control_mino=0
         fall_mino=[]
-        fall_mino2=[]
         field=Field_T()
-        sleep_time=0.3
-        hard_drop_sleep=0.02
+        sleep_time=0.05
+        sleep_fast_time=0
+        hard_drop_sleep=0.001
+        Fall_interval=8
+        Fall_interval_use=0
+        next_control_mino=0
+        #next_control_mino=create_control_mino(next_control_mino)
+        next_control_mino=create_control_mino(next_control_mino)
         while True:
-
-            #画面の描写
-            if fall_flag==True:
-                control_mino=Tetriminol_I()
+            if fall_flag==True and Fall_interval_use%Fall_interval == 0:
+                control_mino=copy.copy(next_control_mino)
+                next_control_mino=create_control_mino(next_control_mino)
+                #next_control_mino=create_control_mino(next_control_mino)
+                #i=Tetriminol_I()
+                #control_mino=copy.copy(i)
                 fall_flag==False
-                time.sleep(sleep_time*0.3)
-
+                time.sleep(sleep_fast_time)
             self.screen.fill(self.bg_color)#画面クリア
-            #mino=control_mino.spin(300+x,100+y,spin)
-            control_mino.spin()
+            control_mino.drow()
+            next_control_mino.next_drow()
             field.drow_fall_mino()
             well=field.drow()
-            #spin=i.spin(300+x,y,spin)
-
-            fall_flag=control_mino.mino_fall(well,field.after_fall_mino_pass())
-            if fall_flag==True:
-                fall_mino=control_mino.after_fall_minos_pass()
-                #field.after_fall_mino_add(fall_mino[len(fall_mino)-4:])
-                field.after_fall_mino_add(fall_mino)
-                field.after_fall_mino_clear()
-
-            t=t+1
+            if Fall_interval_use%Fall_interval == 0:
+                fall_flag=control_mino.mino_fall(well,field.after_fall_mino_pass())
+                if fall_flag==True:
+                    fall_mino=control_mino.after_fall_minos_pass()
+                    field.after_fall_mino_add(fall_mino)
+                    field.after_fall_mino_clear()
+                    #fall_flag==False
+            Fall_interval_use=Fall_interval_use+1
 
             pygame.display.flip()#画面描画
             flag=control_mino.move(field.well_pass(),field.after_fall_mino_pass())#回転可能かどうか試す際に配置するミノを描画したくないので画面クリア直前に配置
