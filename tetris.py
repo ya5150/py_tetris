@@ -1,6 +1,7 @@
 from msvcrt import kbhit
 #from re import I
 import sys
+from tokenize import single_quoted
 import pygame
 import time
 from pygame.locals import *
@@ -18,16 +19,16 @@ def move_check(mino,well,after_fall_minos):#ミノと壁が衝突するか判定
             flag = True
     #print(flag)
     return(flag)
-def create_control_minotes(next_control_mino):
-    i=0
-    i=Tetriminol_sq()
-    next_control_mino=copy.copy(i)
-    return(next_control_mino)
 
-def create_control_mino(next_control_mino):
+def text_show(screen,text_data,font_size,r,g,b,x,y):
+    font = pygame.font.Font(None,font_size)
+    text = font.render(str(text_data), True, (r,g,b))   # 描画する文字列の設定
+    screen.blit(text, [x,y])# 文字列の表示位置
+
+def create_control_mino(next_control_mino):#ランダムで操作ミノのインスタンスを作成
     randam_nam=random.uniform(0,7)
     i=0
-    if randam_nam <1:
+    if randam_nam <1:#スイッチ文に書き換える
         i=Tetriminol_I()
         next_control_mino=copy.copy(i)
         return(next_control_mino)
@@ -55,16 +56,28 @@ def create_control_mino(next_control_mino):
         i=Tetriminol_sq()
         next_control_mino=copy.copy(i)
         return(next_control_mino)
-class Hold:
+
+class Hold:#ホールド
     def __init__(self):
         self.hold_rect=0
+        self.hold_rect_back=0
         #self.hold_rect_r
         #self.hold_rect_g
         #self.hold_rect_b
 
     def swap(self,hold_rect):
-        self.hold_rect=copy.copy(hold_rect)
-
+        if self.hold_rect!=0:
+            self.hold_rect_back=copy.copy(self.hold_rect)
+            self.hold_rect=copy.copy(hold_rect)
+            if self.hold_rect_back!=0:
+                self.hold_rect_back.app_x=hold_rect.app_x
+                self.hold_rect_back.app_y=hold_rect.app_y
+            return(self.hold_rect_back)
+        else:
+            self.hold_rect=copy.copy(hold_rect)
+            return(self.hold_rect_back)
+    def view(self):
+        self.hold_rect.hold_drow()
 class Tetriminol:#操作ミノに関するクラス
     def __init__(self):
         self.rect_start_x=300
@@ -75,6 +88,8 @@ class Tetriminol:#操作ミノに関するクラス
         self.rect_move_y=20
         self.rect_next_x=700
         self.rect_next_y=100
+        self.rect_hold_x=900
+        self.rect_hold_y=700
         self.screen = pygame.display.set_mode((1200,800))
         self.spin_pattern=0
         self.spin_direction=0#回転方向の命令 -1は左回転、0は回転しない,１は右回転
@@ -85,10 +100,12 @@ class Tetriminol:#操作ミノに関するクラス
         self.app_x=0
         self.after_fall_minos=[]
         self.hard_dorp=False
+        self.hold=False
         self.key_down_r=False
         self.key_down_l=False
         self.key_down_d=False
         self.key_down_a=False
+        self.key_down_q=False
         self.key_down_up=False
         self.key_sensitivity=0
         self.r_move_count=0
@@ -112,11 +129,11 @@ class Tetriminol:#操作ミノに関するクラス
     def mino_pass(self):
         return(self.mino)
 
-    def move(self,well,after_fall_mino):
+    def move(self,well,after_fall_mino,instance=0):
             """キー入力の監視"""
             key=[]
 
-            for event in  pygame.event.get():
+            for event in  pygame.event.get():#入力されたキーのログがなくなるまでループ
                 """event=キー入力などユーザーの操作,elif使うと同時押しに対応できないので使わない"""
                 if event.type == pygame.QUIT:#終了
                     sys.exit()
@@ -129,6 +146,8 @@ class Tetriminol:#操作ミノに関するクラス
                         self.key_down_d=True
                     if event.key == pygame.K_a:#右回転
                         self.key_down_a = True
+                    if event.key == pygame.K_q:#ホールド
+                        self.key_down_q = True
                     if event.key == pygame.K_UP:#ハードドロップ
                         self.key_down_up=True
                 if event.type == pygame.KEYUP:
@@ -140,11 +159,15 @@ class Tetriminol:#操作ミノに関するクラス
                         self.key_down_d = False
                     if event.key == pygame.K_a:
                         self.key_down_a = False
+                    if event.key == pygame.K_q:
+                        self.key_down_q = False
+                        self.hold=False
                     if event.key == pygame.K_UP:
                         self.key_down_up = False
+
             """キー入力に対応した操作ミノの動作"""
             self.key_sensitivity=self.key_sensitivity+1
-            if self.key_sensitivity%2 == 0:
+            if self.key_sensitivity%3 == 0:
                 if self.key_down_r == True:
                     self.app_x=self.app_x+20
                     self.drow(well,after_fall_mino,r_move=True)
@@ -163,17 +186,11 @@ class Tetriminol:#操作ミノに関するクラス
                 if self.key_down_a == True:
                     self.drow(well,after_fall_mino,+1)#-1は左回転
                     #self.key_down_a == False
-                if self.key_down_up == True:
+                if self.key_down_q == True:#ホールド処理は操作ミノのクラス外なのでholdクラスで処理
+                    self.hold=True
+                if self.key_down_up == True:#
                     self.hard_dorp=True
-            return(self.hard_dorp)
-
-    def move_check(self,mino,well):#ミノと壁が衝突するか判定
-        flag = False #衝突判定用フラグ
-        for i in mino:#動いている4つのミノが壁に接触しているか確認する
-            if i.collidelist(well) != -1:#衝突したときにフラグをtrueに
-                flag = True
-        return(flag)
-
+            return(self.hard_dorp,self.hold)
 
 class Field_T(Tetriminol):#壁や落下後のテトリミノに関する処理
     def __init__(self):
@@ -199,14 +216,14 @@ class Field_T(Tetriminol):#壁や落下後のテトリミノに関する処理
         tops_loop=[]
         tops_index=[]
         clear_top=0
-        renzoku=0
+        clear_mino=0
         for i in range (0,len(self.after_fall_mino)):#pygameの四角形(rect)を格納したオブジェクトは個々の値を参照する際メソッドを使用するので、メソッド[.index]を併用できず個々の値から添え字を調べられないので、リストtopsに値を格納してから調べる
             tops.append(self.after_fall_mino[i].top)
         #print(tops.count(420))
         tops_loop=list(dict.fromkeys(tops))#重複要素を削除したループ用リストを作成
         for i in tops_loop:
             if tops.count(i)>=5:#同じ高さのブロックが10列並んだ時
-                renzoku=renzoku+1
+                clear_mino=clear_mino+1
                 idx=-1
                 for j in range(tops.count(i)):#消す予定のミノのインデックスを取得
                     idx = tops.index(i,idx+1)
@@ -224,12 +241,55 @@ class Field_T(Tetriminol):#壁や落下後のテトリミノに関する処理
                         self.after_fall_mino[j].top=self.after_fall_mino[j].top+20
                         tops[j]=tops[j]+20
                 tops_index=[]
-
+        return(clear_mino)
     def after_fall_mino_pass(self):#落下済みミノ渡し用
         return(self.after_fall_mino)
     def well_pass(self):#落下済みミノ渡し用
         return(self.well)
 
+class Score:#スコアの計算と表示
+    def __init__(self):
+        self.score=0
+        self.ren=-1
+        self.ren_score=50
+    def computation (self,clear_mino):
+        single_score=100
+        double_score=300
+        triple_score=500
+        tetris_score=800
+
+        if clear_mino == 1:
+            self.ren=self.ren+1
+            self.score=self.score+single_score+self.ren*self.ren_score
+        elif clear_mino == 2:
+            self.ren=self.ren+1
+            self.score=self.score+double_score+self.ren*self.ren_score
+        elif clear_mino == 3:
+            self.ren=self.ren+1
+            self.score=self.score+triple_score+self.ren*self.ren_score
+        elif clear_mino == 4:
+            self.ren=self.ren+1
+            self.score=self.score+tetris_score+self.ren*self.ren_score
+        else:
+            self.ren=-1
+    def show(self,screen):
+        text_data="Score: "+str(self.score)
+        font_size=50
+        r=50
+        g=50
+        b=50
+        x=800
+        y=100
+        text_show(screen,text_data,font_size,r,g,b,x,y)
+        x=800
+        y=200
+        if self.ren>=1:
+            text_data=self.ren+1
+            text_data=str(text_data)+" REN"
+            text_show(screen,text_data,font_size,r,g,b,x,y)
+            x=900
+            text_data="Bonus + "+str(self.ren*50)
+            text_show(screen,text_data,font_size,r,g,b,x,y)
 class Tetriminol_I(Tetriminol):#I型テトリミノ
     def __init__(self):
         super().__init__()
@@ -276,6 +336,11 @@ class Tetriminol_I(Tetriminol):#I型テトリミノ
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*2,self.rect_size_x,self.rect_size_y))
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*3,self.rect_size_x,self.rect_size_y))
+    def hold_drow(self):
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*0, self.rect_hold_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*0, self.rect_hold_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*0, self.rect_hold_y+self.rect_move_y*2,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*0, self.rect_hold_y+self.rect_move_y*3,self.rect_size_x,self.rect_size_y))
 
 class Tetriminol_T(Tetriminol):#T型テトリミノ
     def __init__(self):
@@ -331,6 +396,11 @@ class Tetriminol_T(Tetriminol):#T型テトリミノ
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x-self.rect_move_x*1, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*1, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+    def hold_drow(self):
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*0, self.rect_hold_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x-self.rect_move_x*1, self.rect_hold_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*0, self.rect_hold_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*1, self.rect_hold_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
 
 class Tetriminol_S(Tetriminol):#S型テトリミノ
     def __init__(self):
@@ -376,6 +446,11 @@ class Tetriminol_S(Tetriminol):#S型テトリミノ
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*1, self.rect_next_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x-self.rect_move_x*1, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+    def hold_drow(self):
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*0, self.rect_hold_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*1, self.rect_hold_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*0, self.rect_hold_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x-self.rect_move_x*1, self.rect_hold_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
 
 class Tetriminol_S_R(Tetriminol):#逆S型テトリミノ
     def __init__(self):
@@ -421,6 +496,11 @@ class Tetriminol_S_R(Tetriminol):#逆S型テトリミノ
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*1, self.rect_next_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*1, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*2, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+    def hold_drow(self):
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*0, self.rect_hold_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*1, self.rect_hold_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*1, self.rect_hold_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*2, self.rect_hold_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
 
 class Tetriminol_sq(Tetriminol):#四角型テトリミノ
     def __init__(self):
@@ -446,6 +526,11 @@ class Tetriminol_sq(Tetriminol):#四角型テトリミノ
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*1, self.rect_next_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*1, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+    def hold_drow(self):
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*0, self.rect_hold_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*1, self.rect_hold_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*0, self.rect_hold_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*1, self.rect_hold_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
 
 class Tetriminol_L(Tetriminol):#L型テトリミノ
     def __init__(self):
@@ -501,6 +586,11 @@ class Tetriminol_L(Tetriminol):#L型テトリミノ
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x-self.rect_move_x*0, self.rect_next_y-self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*1, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+    def hold_drow(self):
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*0, self.rect_hold_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x-self.rect_move_x*0, self.rect_hold_y-self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*0, self.rect_hold_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*1, self.rect_hold_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
 
 class Tetriminol_L_R(Tetriminol):#逆L型テトリミノ
     def __init__(self):
@@ -556,6 +646,11 @@ class Tetriminol_L_R(Tetriminol):#逆L型テトリミノ
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x-self.rect_move_x*0, self.rect_next_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x+self.rect_move_x*0, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_next_x-self.rect_move_x*1, self.rect_next_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+    def hold_drow(self):
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*0, self.rect_hold_y-self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x-self.rect_move_x*0, self.rect_hold_y+self.rect_move_y*0,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x+self.rect_move_x*0, self.rect_hold_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
+        pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x-self.rect_move_x*1, self.rect_hold_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
 
 
 class AlienInvasion:
@@ -567,21 +662,23 @@ class AlienInvasion:
         self.bg_color = (230,230,100)
 
     def run_game(self):
-        """ゲームのメインループを開始する"""
         fall_flag=True#操作しているミノが落下済みまたはループ初回時かどうか
         control_mino=0
         fall_mino=[]
+        score=Score()
         field=Field_T()
+        hold=Hold()
+        hold_on=False
         sleep_time=0.05
         sleep_fast_time=0
         hard_drop_sleep=0.001
         Fall_interval=8
         Fall_interval_use=0
         next_control_mino=0
-        #next_control_mino=create_control_mino(next_control_mino)
         next_control_mino=create_control_mino(next_control_mino)
+
         while True:
-            if fall_flag==True and Fall_interval_use%Fall_interval == 0:
+            if fall_flag==True and Fall_interval_use%Fall_interval == 0 or control_mino==0:
                 control_mino=copy.copy(next_control_mino)
                 next_control_mino=create_control_mino(next_control_mino)
                 #next_control_mino=create_control_mino(next_control_mino)
@@ -594,21 +691,32 @@ class AlienInvasion:
             next_control_mino.next_drow()
             field.drow_fall_mino()
             well=field.drow()
+            if  hold_on== True:
+                hold.view()
+
+
             if Fall_interval_use%Fall_interval == 0:
                 fall_flag=control_mino.mino_fall(well,field.after_fall_mino_pass())
                 if fall_flag==True:
                     fall_mino=control_mino.after_fall_minos_pass()
                     field.after_fall_mino_add(fall_mino)
-                    field.after_fall_mino_clear()
+                    score.computation(field.after_fall_mino_clear())
                     #fall_flag==False
+            score.show(self.screen)
             Fall_interval_use=Fall_interval_use+1
 
             pygame.display.flip()#画面描画
-            flag=control_mino.move(field.well_pass(),field.after_fall_mino_pass())#回転可能かどうか試す際に配置するミノを描画したくないので画面クリア直前に配置
-            if flag==True:
+            flag=control_mino.move(field.well_pass(),field.after_fall_mino_pass(),control_mino)#回転可能かどうかなど試す際に配置するミノを描画したくないので画面クリア直前に配置
+            if flag[0]==True:#ハードドロップ入力判定
                 time.sleep(hard_drop_sleep)
             else:
                 time.sleep(sleep_time)
+
+            if flag[1] == True:#ホールド入力判定
+                control_mino=hold.swap(control_mino)
+                hold_on=True
+
+
 
 
 if __name__=="__main__":#このプロシャージャがインポートされたものでなく直接呼び出されたときのみ下記を実行
