@@ -717,7 +717,7 @@ class Tetriminol_L_R(Tetriminol):#逆L型テトリミノ
         pygame.draw.rect(self.screen,(self.rect_r,self.rect_g,self.rect_b),Rect(self.rect_hold_x-self.rect_move_x*1, self.rect_hold_y+self.rect_move_y*1,self.rect_size_x,self.rect_size_y))
 
 
-class AlienInvasion:
+class Pytetris:
     def __init__(self):
         """ゲームを初期化してゲームのリソースを作成する"""
         pygame.init()
@@ -773,9 +773,7 @@ class AlienInvasion:
             well=field.drow()#壁を描画して壁の位置を取得
             for i in range(len(description_text)):#操作説明描画
                 text_show(self.screen,description_text[i],description_font_size,description_text_rgb[0],description_text_rgb[1],description_text_rgb[2],description_text_x,description_text_y+description_text_app_y*i)
-            #pygame.display.flip()#画面更新
             control_mino.drow()#操作ミノ描画
-            #pygame.display.flip()#画面更新
             next_control_mino.next_drow()#次の操作ミノ描画
             text_show(self.screen,next_text,next_font_size,next_text_rgb[0],next_text_rgb[1],next_text_rgb[2],next_text_x,next_text_y)
             field.drow_fall_mino()#落下済みミノ描画
@@ -820,6 +818,6 @@ class AlienInvasion:
 
 
 if __name__=="__main__":#このプロシャージャがインポートされたものでなく直接呼び出されたときのみ下記を実行
-    ai = AlienInvasion()
-    ai.run_game()
+    py = Pytetris()
+    py.run_game()
 
