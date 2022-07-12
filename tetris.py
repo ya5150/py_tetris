@@ -8,20 +8,19 @@ from pygame.locals import *
 import copy
 import random
 from tkinter import messagebox
-#class Tetris_field
 
 def move_check(mino,well,after_fall_minos):#操作ミノが壁や落下済みミノと衝突しているか判定,引数に複数クラスの要素を要求するためクラス外に
     flag = False
-    tops=[]
+
     for i in mino:#動いている4つのミノの衝突確認
         if i.collidelist(well) != -1:#壁衝突
             flag = True
         if i.collidelist(after_fall_minos) != -1:#落下済みブロック衝突
             flag = True
-    #print(flag)
+    
     return(flag)
 
-def text_show(screen,text_data,font_size,r,g,b,x,y):
+def text_show(screen,text_data,font_size,r,g,b,x,y):#テキスト表示
     font = pygame.font.Font("VL-Gothic-Regular.ttf",font_size)#ファイル見つからないければ"VL-Gothic-Regular.ttf"→none置き換える
 
     text = font.render(str(text_data), True, (r,g,b))
@@ -29,37 +28,37 @@ def text_show(screen,text_data,font_size,r,g,b,x,y):
 
 def create_control_mino(next_control_mino):#ランダムで操作ミノのインスタンスを作成
     randam_nam=random.uniform(0,7)
-    i=0
+    randam_instance=0
     if randam_nam <1:
-        i=Tetriminol_I()
-        next_control_mino=copy.copy(i)
+        randam_instance=Tetriminol_I()
+        next_control_mino=copy.copy(randam_instance)
         return(next_control_mino)
     elif randam_nam <2:
-        i=Tetriminol_T()
-        next_control_mino=copy.copy(i)
+        randam_instance=Tetriminol_T()
+        next_control_mino=copy.copy(randam_instance)
         return(next_control_mino)
     elif randam_nam<3:
-        i=Tetriminol_S()
-        next_control_mino=copy.copy(i)
+        randam_instance=Tetriminol_S()
+        next_control_mino=copy.copy(randam_instance)
         return(next_control_mino)
     elif randam_nam <4:
-        i=Tetriminol_S_R()
-        next_control_mino=copy.copy(i)
+        randam_instance=Tetriminol_S_R()
+        next_control_mino=copy.copy(randam_instance)
         return(next_control_mino)
     elif randam_nam<5:
-        i=Tetriminol_L()
-        next_control_mino=copy.copy(i)
+        randam_instance=Tetriminol_L()
+        next_control_mino=copy.copy(randam_instance)
         return(next_control_mino)
     elif randam_nam <6:
-        i=Tetriminol_L_R()
-        next_control_mino=copy.copy(i)
+        randam_instance=Tetriminol_L_R()
+        next_control_mino=copy.copy(randam_instance)
         return(next_control_mino)
     elif randam_nam<7:
-        i=Tetriminol_sq()
-        next_control_mino=copy.copy(i)
+        randam_instance=Tetriminol_sq()
+        next_control_mino=copy.copy(randam_instance)
         return(next_control_mino)
 
-class Hold:#ホールド処理
+class Hold:#ホールド機能
     def __init__(self):
         self.hold_rect="No instance"
         self.hold_rect_back="No instance"
@@ -75,7 +74,7 @@ class Hold:#ホールド処理
         else:
             self.hold_rect=copy.copy(hold_rect)
             return(self.hold_rect_back)
-    def swap_check(self,control_mino,well,after_fall_mino):#スワップ後ミノが衝突していたらスワップ処理をとりけす
+    def swap_check(self,control_mino,well,after_fall_mino):#ホールド時ミノが他の障害物と被らないかチェック
         control_mino.drow()
         if move_check(control_mino.mino_pass(),well,after_fall_mino)==True:
             self.hold_rect_back=copy.copy(self.hold_rect)
@@ -83,30 +82,28 @@ class Hold:#ホールド処理
             return(self.hold_rect_back)
         else:
             return(control_mino)
-    def drow(self):
+    def drow(self):#ホールドミノ描画
         self.hold_rect.hold_drow()
 
 class Tetriminol:#操作ミノに関するクラス
     def __init__(self):
+        """操作ミノ関連のパラメータ"""
+        self.mino=[]#操作中のミノ4つを格納する
         self.rect_start_x=300
         self.rect_start_y=100
         self.rect_size_x=20
         self.rect_size_y=20
         self.rect_move_x=20
         self.rect_move_y=20
-        self.rect_next_x=480
-        self.rect_next_y=100
-        self.rect_hold_x=70
-        self.rect_hold_y=100
-        self.screen = pygame.display.set_mode((1200,800))
-        self.spin_pattern=0
-        self.spin_direction=0#回転方向の命令 -1は左回転、0は回転しない,１は右回転
-        self.mino=[]#操作中のミノ4つを格納する
-        self.well=[]#4方向の壁を格納する
-        self.immediately_after_creation=True #操作ミノ作成直後かどうかの判定
         self.app_y=0
         self.app_x=0
-        self.after_fall_minos=[]#落下済みミノの格納
+        """Nextミノ描画位置"""
+        self.rect_next_x=480
+        self.rect_next_y=100
+        """ホールドミノ描画位置"""
+        self.rect_hold_x=70
+        self.rect_hold_y=100
+        """キー入力読み取り関連"""
         self.hard_dorp=False
         self.hold=False
         self.key_down_r=False
@@ -115,14 +112,24 @@ class Tetriminol:#操作ミノに関するクラス
         self.key_down_a=False
         self.key_down_q=False
         self.key_down_up=False
-        self.key_sensitivity=0
         self.r_move_count=0
         self.l_move_count=0
-        self.key_sensitivity=1
+        """回転"""
+        self.spin_pattern=0#回転方向初期値
+        self.spin_direction=0#回転方向の命令格納用 -1は左回転、0は回転しない,１は右回転
+        """キー入力感度"""
         self.key_sensitivity_use=3#キー入力感度の調整、低いほど感度がさがる,上げすぎるとキー入力に反応しにくくなる
-        self.deferral_grounded=7 #落下ミノが接地後に動ける猶予
+        self.key_sensitivity=1#キー感度計算用
+        """落下ミノが接地後動ける時間の猶予設定"""
+        self.deferral_grounded=7 #値を増やすと接地後に動ける時間が増える
         self.deferral_grounded_use=0
-    def rgb_pass(self):
+        """その他"""
+        self.screen = pygame.display.set_mode((1200,800))
+        self.well=[]#4方向の壁を格納する
+        self.immediately_after_creation=True #操作ミノ作成直後かどうかの判定
+        self.after_fall_minos=[]#落下済みミノの格納
+
+    def rgb_pass(self):#操作ミノのrgb値渡し用
         rect_r=[]
         rect_g=[]
         rect_b=[]
@@ -132,7 +139,8 @@ class Tetriminol:#操作ミノに関するクラス
             rect_g.append(self.rect_g)
             rect_b.append(self.rect_b)
         return(rect_r,rect_g,rect_b)
-    def mino_fall(self,fall_flag):
+
+    def mino_fall(self,fall_flag):#ミノの落下処理
         gameover_text_title="gameover"
         gameover_text="ミノが上限に達しました、終了します"
         if fall_flag  == False:
@@ -151,7 +159,7 @@ class Tetriminol:#操作ミノに関するクラス
                 return(True)
         return(False)
 
-    def mino_fall_check(self,well,after_fall_minos):#ミノ落下可能か判定
+    def mino_fall_check(self,well,after_fall_minos):#ミノ落下可能か判定用
         fall=False
         mino_move=20
         for i in range(len(self.mino)):
@@ -163,17 +171,19 @@ class Tetriminol:#操作ミノに関するクラス
         else:
             for i in range(len(self.mino)):
                 self.mino[i].top=self.mino[i].top-mino_move
-            pygame.display.flip()#画面更新
+            #pygame.display.flip()#画面更新
             return(True)
 
     def after_fall_minos_pass(self):
         return(self.after_fall_minos)
+
     def after_fall_minos_clear(self):
         self.after_fall_minos=[]
+
     def mino_pass(self):
         return(self.mino)
 
-    def move(self,well,after_fall_mino,instance=0):
+    def move(self,well,after_fall_mino,instance=0):#キー入力読み取って操作ミノを動作させる
             """キー入力の監視"""
             key=[]
             for event in  pygame.event.get():#入力されたキーのログがなくなるまでループ
@@ -210,7 +220,7 @@ class Tetriminol:#操作ミノに関するクラス
 
             """キー入力に対応した操作ミノの動作"""
             self.key_sensitivity=self.key_sensitivity+1
-            if self.key_sensitivity%self.key_sensitivity_use == 0:
+            if self.key_sensitivity%self.key_sensitivity_use == 0:#キー入力感度調整
                 if self.key_down_r == True:
                     self.app_x=self.app_x+20
                     self.drow(well,after_fall_mino,r_move=True)
@@ -269,17 +279,14 @@ class Field_T(Tetriminol):#壁や落下後のテトリミノに関する処理
         #print(self.after_fall_mino)
 
     def after_fall_mino_clear(self):#ミノそろったときに消す
-        tops=[]
-        tops_loop=[]
-        tops_index=[]
-        clear_top=0
-        clear_mino=0
-        rect_fall=20
-        kazu=0
-        #print(len(self.after_fall_mino))
+        tops=[]#操作ミノy方向の値格納
+        tops_loop=[]#topsから重複要素を抜いた要素を格納
+        tops_index=[]#操作ミノインデックス格納
+        clear_top=0#消去したミノの高さ
+        clear_mino=0#消去したミノの数
+        rect_fall=20#ミノの落ちる量
         for i in range (0,len(self.after_fall_mino)):#pygameの四角形(rect)を格納したオブジェクトは個々の値を参照する際メソッドを使用するので、メソッド[.index]を併用できず個々の値から添え字を調べられないので、リストtopsに値を格納してから調べる
             tops.append(self.after_fall_mino[i].top)
-        #print(tops.count(420))
         tops_loop=list(dict.fromkeys(tops))#重複要素を削除したループ用リストを作成
         tops_loop.sort()#fromkeyは最小値から順でソートされないのでソートする
         for i in tops_loop:
@@ -313,9 +320,9 @@ class Field_T(Tetriminol):#壁や落下後のテトリミノに関する処理
 class Score:#スコアの計算と表示
     def __init__(self):
         self.score=0
-        self.ren=-1
+        self.ren=-1#連続消し数格納
         self.ren_score=50
-    def computation (self,clear_mino):
+    def computation (self,clear_mino):#スコア計算
         single_score=100
         double_score=300
         triple_score=500
@@ -726,8 +733,6 @@ class Pytetris:
         self.bg_color = (150,150,150)
 
     def run_game(self):
-        fall_flag=False
-        fall_flag3=False
         control_mino="No instance"#操作ミノのインスタンス用、あとでランダムでミノのインスタンスを決定するので最初はインスタンス化しない
         hold_text="HOLD"
         hold_text_x=50
@@ -746,7 +751,6 @@ class Pytetris:
         description_text_rgb=230,230,230
         description_text_app_y=20
         fall_mino=[]
-        fall_flag2=False
         score=Score()
         field=Field_T()
         hold=Hold()
@@ -759,6 +763,9 @@ class Pytetris:
         Fall_interval_use=0
         next_control_mino="No instance"#初期値設定しておかないとcreate_control_mino関数でエラーがでるので初期値を設定
         next_control_mino=create_control_mino(next_control_mino)
+        fall_flag=False
+        fall_flag2=False
+        fall_flag3=False
 
         while True:
             if fall_flag == True  or control_mino=="No instance" or fall_flag3==True and Fall_interval_use%Fall_interval == 0:
